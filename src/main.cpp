@@ -7,12 +7,18 @@
 
 using namespace geode::prelude;
 
-#define USES_METERING level->m_songID > 0 || level->m_audioTrack > 19
-
 // audioStep has to be hooked because Robtop didn't add
 // a null check for PlayLayer, causing the game to crash
 // when AEL is added elsewhere. Thanks Robtop
 class $modify(AudioEffectsLayer) {
+    static void onModify(auto& self) {
+        if (!self.setHookPriorityPre("AudioEffectsLayer::audioStep", Priority::Replace)) {
+            log::error("Failed to set hook priority for AudioEffectsLayer::audioStep");
+        } else {
+            log::info("Setting hook priority for AudioEffectsLayer::audioStep was successful");
+        }
+    }
+
 	void audioStep(float dt) {
 		this->m_timeElapsed += dt;
 
@@ -46,30 +52,32 @@ class $modify(MyLevelEditorLayer, LevelEditorLayer) {
     void updateEditor(float dt) {
         LevelEditorLayer::updateEditor(dt);
 
+        auto fields = m_fields.self();
+
         if (!this->m_editorUI->m_isPlayingMusic && this->m_playbackMode != PlaybackMode::Playing) {
-            if (m_fields->m_wasPulsing) {
+            if (fields->m_wasPulsing) {
                 for (auto& object : m_activeObjects) {
                     if (object->m_usesAudioScale && !object->m_hasNoAudioScale) {
                         object->setRScale(1.0f);
                     }
                 }
 
-                m_fields->m_wasPulsing = false;
+                fields->m_wasPulsing = false;
             }
 
             return;
         }
 
-        m_fields->m_wasPulsing = true;
-        if (m_fields->m_AEL) m_fields->m_AEL->audioStep(dt);
+        fields->m_wasPulsing = true;
+        if (fields->m_AEL) fields->m_AEL->audioStep(dt);
 
         auto fmod = FMODAudioEngine::sharedEngine();
         auto scale = 0.5f;
         
         if (fmod->m_metering) {
             scale = fmod->getMeteringValue();
-        } else if (m_fields->m_AEL) {
-            scale = m_fields->m_AEL->m_audioScale;
+        } else if (fields->m_AEL) {
+            scale = fields->m_AEL->m_audioScale;
         }
         
         for (auto& object : m_activeObjects) {
@@ -87,7 +95,7 @@ class $modify(MyLevelEditorLayer, LevelEditorLayer) {
 		if (!level || !LevelEditorLayer::init(level, noUI))
             return false;
 
-        if (USES_METERING) {
+        if (level->m_songID > 0 || level->m_audioTrack > 19) {
             FMODAudioEngine::sharedEngine()->enableMetering();
         } else {
             m_fields->m_AEL = AudioEffectsLayer::create(LevelTools::getAudioString(level->m_audioTrack));
@@ -102,43 +110,43 @@ class $modify(EditorUI) {
     void onPlayback(CCObject* sender) {
         EditorUI::onPlayback(sender);
 
-        auto AEL = static_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields->m_AEL;
-        if (!AEL) return;
+        auto fields = modify_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields.self();
+        if (!fields->m_AEL) return;
 
-        AEL->resetAudioVars();
-        AEL->m_timeElapsed = this->m_playbackStartTime;
+        fields->m_AEL->resetAudioVars();
+        fields->m_AEL->m_timeElapsed = this->m_playbackStartTime;
 
         // Pulsing using AEL will be off synced if audio playback
         // isn't started from the beginning, so I must remove the 
-        // passed audio vars manually. Same for playtesting
-        while (AEL->m_unk1c0->count() >= 2) {
-            float t = static_cast<CCString*>(AEL->m_unk1c0->objectAtIndex(0))->floatValue();
+        // skipped audio vars manually. Same for playtesting
+        while (fields->m_AEL->m_unk1c0->count() >= 2) {
+            float t = static_cast<CCString*>(fields->m_AEL->m_unk1c0->objectAtIndex(0))->floatValue();
             if (t >= this->m_playbackStartTime) break;
 
-            AEL->m_unk1c0->removeObjectAtIndex(0, true);
-            AEL->m_unk1c0->removeObjectAtIndex(0, true);
+            fields->m_AEL->m_unk1c0->removeObjectAtIndex(0, true);
+            fields->m_AEL->m_unk1c0->removeObjectAtIndex(0, true);
         }
     }
 
     void onPlaytest(CCObject* sender) {
         EditorUI::onPlaytest(sender);
 
-        auto AEL = static_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields->m_AEL;
-        if (!AEL) return;
+        auto fields = modify_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields.self();
+        if (!fields->m_AEL) return;
 
         auto songOffset = 0.0f;
         if (this->m_editorLayer->m_startPosObject)
             songOffset = std::max(this->m_editorLayer->m_startPosObject->getStartPos().x / 311.58f, 0.0f);
 
-        AEL->resetAudioVars();
-        AEL->m_timeElapsed = songOffset;
+        fields->m_AEL->resetAudioVars();
+        fields->m_AEL->m_timeElapsed = songOffset;
 
-        while (AEL->m_unk1c0->count() >= 2) {
-            float t = static_cast<CCString*>(AEL->m_unk1c0->objectAtIndex(0))->floatValue();
+        while (fields->m_AEL->m_unk1c0->count() >= 2) {
+            float t = static_cast<CCString*>(fields->m_AEL->m_unk1c0->objectAtIndex(0))->floatValue();
             if (t >= songOffset) break;
 
-            AEL->m_unk1c0->removeObjectAtIndex(0, true);
-            AEL->m_unk1c0->removeObjectAtIndex(0, true);
+            fields->m_AEL->m_unk1c0->removeObjectAtIndex(0, true);
+            fields->m_AEL->m_unk1c0->removeObjectAtIndex(0, true);
         }
     }
 };
@@ -146,25 +154,30 @@ class $modify(EditorUI) {
 class $modify(LevelSettingsLayer) {
     void onClose(CCObject* sender) {
         LevelSettingsLayer::onClose(sender);
+
+        if (!this->m_songSelectNode) {
+            log::warn("m_songSelectNode is null, returning...");
+            return; 
+        }
         
         auto lel = this->m_editorLayer;
-        auto myLEL = static_cast<MyLevelEditorLayer*>(lel);
-        auto level = lel->m_level;
+        auto fields = modify_cast<MyLevelEditorLayer*>(lel)->m_fields.self();
         
-        if (USES_METERING) {
+        if (this->m_songSelectNode->m_isCustomSong) {
             FMODAudioEngine::sharedEngine()->enableMetering();
-            if (myLEL->m_fields->m_AEL) {
-                myLEL->m_fields->m_AEL->removeFromParent();
-                myLEL->m_fields->m_AEL = nullptr;
+            if (fields->m_AEL) {
+                fields->m_AEL->removeFromParent();
+                fields->m_AEL = nullptr;
+                log::info("Removed m_AEL, address of m_AEL: {}", fields->m_AEL);
             }
         } else {
-            myLEL->m_fields->m_AEL = AudioEffectsLayer::create(LevelTools::getAudioString(level->m_audioTrack));
-            if (lel->m_objectLayer && myLEL->m_fields->m_AEL)
-                lel->m_objectLayer->addChild(myLEL->m_fields->m_AEL);
+            fields->m_AEL = AudioEffectsLayer::create(LevelTools::getAudioString(lel->m_level->m_audioTrack));
+            if (lel->m_objectLayer && fields->m_AEL) {
+                lel->m_objectLayer->addChild(fields->m_AEL);
+                log::info("m_AEL was added as a child, address of m_AEL: {}", fields->m_AEL);
+            }
 
             FMODAudioEngine::sharedEngine()->disableMetering();
         }
     }
 };
-
-#undef USES_METERING
