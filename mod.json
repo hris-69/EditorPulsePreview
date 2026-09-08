@@ -8,9 +8,9 @@
 	},
 	"id": "hris.editor-pulse-preview",
 	"name": "Editor pulse preview",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"developer": "Hris",
-	"description": "",
-	"tags": ["editor"],
+	"description": "Shows pulses in editor",
+	"tags": ["editor", "offline", "enhancement"],
 	"links": {"source": "https://github.com/hris-69/EditorPulsePreview"}
 }
