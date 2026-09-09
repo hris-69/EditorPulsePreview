@@ -39,9 +39,7 @@ class $modify(AudioEffectsLayer) {
 
 class $modify(LevelSettingsLayer) {
     void onClose(CCObject* sender) {
-        LevelSettingsLayer::onClose(sender);
-        
-        if (!this->m_songSelectNode) return;
+        if (!this->m_songSelectNode) return LevelSettingsLayer::onClose(sender);
         
         const auto fields = modify_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields.self();
         
@@ -56,6 +54,8 @@ class $modify(LevelSettingsLayer) {
             this->m_editorLayer->m_objectLayer->addChild(fields->m_AEL);
             FMODAudioEngine::sharedEngine()->disableMetering();
         }
+
+        LevelSettingsLayer::onClose(sender);
     }
 };
 
@@ -63,8 +63,6 @@ class $modify(LevelSettingsLayer) {
 // had their editor layers synced so I hooked this
 class $modify(SetGroupIDLayer) {
     void onClose(CCObject* sender) {
-        SetGroupIDLayer::onClose(sender);
-        
         if (this->m_targetObject && this->m_targetObject->m_objectID >= 15 && this->m_targetObject->m_objectID <= 17) {
             const auto& ball = static_cast<RodGameObject*>(this->m_targetObject)->m_rodBall;
             ball->m_editorLayer = this->m_editorLayerValue;
@@ -78,6 +76,8 @@ class $modify(SetGroupIDLayer) {
                 }
             }
         }
+
+        SetGroupIDLayer::onClose(sender);
     }
 };
 
