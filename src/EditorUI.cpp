@@ -32,7 +32,7 @@ class $modify(MyEditorUI, EditorUI) {
 
     void updateAudioEffects() {
         const auto fields = modify_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields.self();
-        if (!fields->m_AEL) return;
+        if (!fields->m_AEL || !fields->m_AEL->m_unk1c0) return;
 
         auto songOffset = 0.0f;
         if (this->m_editorLayer->m_startPosObject && this->m_editorLayer->m_playbackMode == PlaybackMode::Playing) {

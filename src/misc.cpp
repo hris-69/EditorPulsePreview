@@ -70,7 +70,7 @@ class $modify(SetGroupIDLayer) {
         } else {
             for (const auto& object : this->m_targetObjects->asExt<GameObject*>()) {
                 if (object->m_objectID >= 15 && object->m_objectID <= 17) {
-                    const auto& ball = static_cast<RodGameObject*>(this->m_targetObject)->m_rodBall;
+                    const auto& ball = static_cast<RodGameObject*>(object)->m_rodBall;
                     ball->m_editorLayer = this->m_editorLayerValue;
                     ball->m_editorLayer2 = this->m_editorLayer2Value;
                 }
@@ -93,7 +93,7 @@ class $modify(CustomizeObjectLayer) {
         } else {
             for (const auto& object : this->m_targetObjects->asExt<GameObject*>()) {
                 if (object->m_objectID >= 15 && object->m_objectID <= 17) {
-                    const auto& ball = static_cast<RodGameObject*>(this->m_targetObject)->m_rodBall;
+                    const auto& ball = static_cast<RodGameObject*>(object)->m_rodBall;
                     ball->m_updateParents = true;
                     ball->setMainColorMode(this->m_customColorChannel);
                 }

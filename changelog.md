@@ -1,5 +1,8 @@
+# 1.1.11
+- Fixed a crash caused by closing a certain menu.
+
 # 1.1.1
-- Fixed possible undefined behaviour
+- Fixed possible undefined behaviour.
 
 # 1.1.0
 - Added rod balls in the editor.
