@@ -38,46 +38,54 @@ class $modify(AudioEffectsLayer) {
 };
 
 class $modify(LevelSettingsLayer) {
-    void onClose(CCObject* sender) {
-        if (!this->m_songSelectNode) return LevelSettingsLayer::onClose(sender);
-        
-        const auto fields = modify_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields.self();
-        
-        if (this->m_songSelectNode->m_isCustomSong) {
-            FMODAudioEngine::sharedEngine()->enableMetering();
-            if (fields->m_AEL) {
-                fields->m_AEL->removeFromParent();
-                fields->m_AEL = nullptr;
-            }
-        } else {
-            fields->m_AEL = AudioEffectsLayer::create(LevelTools::getAudioString(this->m_editorLayer->m_level->m_audioTrack));
-            this->m_editorLayer->m_objectLayer->addChild(fields->m_AEL);
-            FMODAudioEngine::sharedEngine()->disableMetering();
-        }
+    bool init(LevelSettingsObject* object, LevelEditorLayer* layer) {
+        if (!LevelSettingsLayer::init(object, layer)) return false;
+        if (!this->m_songSelectNode) return true;
 
-        LevelSettingsLayer::onClose(sender);
+        this->addOnExitCallback(
+            [this] {
+                const auto fields = modify_cast<MyLevelEditorLayer*>(this->m_editorLayer)->m_fields.self();
+                if (this->m_songSelectNode->m_isCustomSong) {
+                    FMODAudioEngine::get()->enableMetering();
+                    if (fields->m_AEL) {
+                        fields->m_AEL->removeFromParent();
+                        fields->m_AEL = nullptr;
+                    }
+                } else {
+                    fields->m_AEL = AudioEffectsLayer::create(LevelTools::getAudioString(this->m_editorLayer->m_level->m_audioTrack));
+                    this->m_editorLayer->m_objectLayer->addChild(fields->m_AEL);
+                    FMODAudioEngine::get()->disableMetering();
+                }
+            }
+        );
+
+        return true;
     }
 };
 
-// XXX: I was too lazy to find where teleport portals
-// had their editor layers synced so I hooked this
-class $modify(SetGroupIDLayer) {
-    void onClose(CCObject* sender) {
-        if (this->m_targetObject && this->m_targetObject->m_objectID >= 15 && this->m_targetObject->m_objectID <= 17) {
-            const auto& ball = static_cast<RodGameObject*>(this->m_targetObject)->m_rodBall;
-            ball->m_editorLayer = this->m_editorLayerValue;
-            ball->m_editorLayer2 = this->m_editorLayer2Value;
+class $modify(MySetGroupIDLayer, SetGroupIDLayer) {
+    void updateEditorLayerID() {
+        SetGroupIDLayer::updateEditorLayerID();
+        this->updateRodBallEditorLayer(&GameObject::m_editorLayer, this->m_editorLayerValue);
+    }
+
+    void updateEditorLayerID2() {
+        SetGroupIDLayer::updateEditorLayerID2();
+        this->updateRodBallEditorLayer(&GameObject::m_editorLayer2, this->m_editorLayer2Value);
+    }
+
+    void updateRodBallEditorLayer(short GameObject::*target, short layer) {
+        if (this->m_targetObject) {
+            if (this->m_targetObject->m_objectID >= 15 && this->m_targetObject->m_objectID <= 17) {
+                static_cast<RodGameObject*>(this->m_targetObject)->m_rodBall->*target = layer;
+            }
         } else {
             for (const auto& object : this->m_targetObjects->asExt<GameObject*>()) {
                 if (object->m_objectID >= 15 && object->m_objectID <= 17) {
-                    const auto& ball = static_cast<RodGameObject*>(object)->m_rodBall;
-                    ball->m_editorLayer = this->m_editorLayerValue;
-                    ball->m_editorLayer2 = this->m_editorLayer2Value;
+                    static_cast<RodGameObject*>(object)->m_rodBall->*target = layer;
                 }
             }
         }
-
-        SetGroupIDLayer::onClose(sender);
     }
 };
 
@@ -101,13 +109,13 @@ class $modify(CustomizeObjectLayer) {
         }
     }
 };
- 
+
 class $modify(GameObject) {
     static void onModify(auto& self) {
         g_hkCreateWithKey = self.getHook("GameObject::createWithKey").unwrap();
         g_hkCreateWithKey->disable() 
             ? log::info("Disabled GameObject::createWithKey hook in onModify") 
-            : log::warn("Failed to disable the GameObject::createWithKey in onModify");
+            : log::error("Failed to disable the GameObject::createWithKey in onModify");
     }
 
     static GameObject* createWithKey(int key) {

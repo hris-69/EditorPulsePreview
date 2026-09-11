@@ -1,3 +1,6 @@
+# 1.1.12
+- Bug fixes and stability improvements.
+
 # 1.1.11
 - Fixed a crash caused by closing a certain menu.
 

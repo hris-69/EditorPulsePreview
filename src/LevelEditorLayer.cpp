@@ -46,7 +46,7 @@ void MyLevelEditorLayer::updateEditor(float dt) {
 bool MyLevelEditorLayer::init(GJGameLevel* level, bool noUI) {
     g_hkCreateWithKey->enable() 
         ? log::info("Successfully enabled the GameObject::createWithKey hook") 
-        : log::warn("Failed to enable the GameObject::createWithKey hook");
+        : log::error("Failed to enable the GameObject::createWithKey hook");
     m_fields->m_rodBallIndex = utils::random::generate(1, 4);
 
 	if (!LevelEditorLayer::init(level, noUI)) return false;
@@ -78,9 +78,12 @@ void MyLevelEditorLayer::addSpecial(GameObject* object) {
         ball->setStartPos(object->convertToWorldSpace({object->m_obRect.size.width * 0.5f, object->m_obRect.size.height + 10.0f}));
         this->addToSection(ball);
 
-        this->m_objects->addObject(ball);
         ball->copyGroups(object);
         this->addToGroups(ball, true);
+
+        this->m_objects->addObject(ball);
+        ball->m_editorLayer = object->m_editorLayer;
+        ball->m_editorLayer2 = object->m_editorLayer2;
     }
 }
 

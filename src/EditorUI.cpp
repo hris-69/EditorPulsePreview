@@ -15,11 +15,14 @@ class $modify(MyEditorUI, EditorUI) {
     }
 
     void selectObjects(CCArray* objects, bool ignoreFilter) {
+        // NOTE: A separate array has to be created because
+        // removing objects from the `objects` parameter is unreliable
+        auto arr = CCArray::create();
         for (const auto& object : objects->asExt<GameObject*>()) {
-            if (object->m_objectID == 37) objects->removeObject(object, true);
+            if (object->m_objectID != 37) arr->addObject(object);
         }
 
-        EditorUI::selectObjects(objects, ignoreFilter);
+        EditorUI::selectObjects(arr, ignoreFilter);
     }
 
     bool canSelectObject(GameObject* object) {

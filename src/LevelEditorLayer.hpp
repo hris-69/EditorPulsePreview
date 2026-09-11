@@ -19,7 +19,7 @@ class $modify(MyLevelEditorLayer, LevelEditorLayer) {
 
             g_hkCreateWithKey->disable() 
                 ? log::info("Successfully disabled the GameObject::createWithKey hook") 
-                : log::warn("Failed to disable the GameObject::createWithKey hook");
+                : log::error("Failed to disable the GameObject::createWithKey hook");
         }
 	};
 
