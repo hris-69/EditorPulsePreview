@@ -1,3 +1,6 @@
+# 1.1.13
+- Attempt to fix a crash caused by changing an object's color.
+
 # 1.1.12
 - Bug fixes and stability improvements.
 

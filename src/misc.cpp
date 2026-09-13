@@ -98,7 +98,7 @@ class $modify(CustomizeObjectLayer) {
             const auto& ball = static_cast<RodGameObject*>(this->m_targetObject)->m_rodBall;
             ball->m_updateParents = true;
             ball->setMainColorMode(this->m_customColorChannel);
-        } else {
+        } else if (this->m_targetObjects) {
             for (const auto& object : this->m_targetObjects->asExt<GameObject*>()) {
                 if (object->m_objectID >= 15 && object->m_objectID <= 17) {
                     const auto& ball = static_cast<RodGameObject*>(object)->m_rodBall;
